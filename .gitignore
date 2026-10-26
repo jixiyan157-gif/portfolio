@@ -1,0 +1,11 @@
+# 依赖与运行时数据（不上传）
+server/node_modules/
+server/data/
+uploads/
+tools/
+preview/
+# 构建产物
+作品集离线版.html
+# 系统文件
+Thumbs.db
+.DS_Store

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI视觉设计师 · 个人作品集</title>
+  <meta name="description" content="AI 视觉设计师个人作品集：以生成式 AI 为核心工作流的品牌视觉、电商视觉与数字艺术实践。">
+  <meta name="theme-color" content="#0a0c10">
+  <meta property="og:title" content="AI视觉设计师 · 个人作品集">
+  <meta property="og:description" content="把想象，变成视觉。以生成式 AI 为核心工作流的视觉设计实践。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0c10'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%238b8fff' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%235fd9ff'/%3E%3C/svg%3E">
+  <!-- 字体：Chivo（拉丁）+ 系统中文黑体；等宽用于技术性文本。
+       中国大陆访问 Google Fonts 不稳定，此处使用镜像源 fonts.loli.net，可按需替换回 fonts.googleapis.com -->
+  <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+  <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Chivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="no-scroll">
+
+  <!-- 全局颗粒噪点，营造画面质感 -->
+  <div class="noise" aria-hidden="true"></div>
+
+  <!-- ============ 入口：视觉展示页 ============
+       概念：一次「生成」。噪声粒子场 → 点击「开始生成」→ 粒子聚拢成核 → 主站浮现。
+       ⚠️ 如果你有自己写的入口特效代码，发给我即可替换整合。 -->
+  <div class="entry" id="entry">
+    <canvas id="entry-canvas" class="entry-canvas" aria-hidden="true"></canvas>
+    <div class="entry-flash" aria-hidden="true"></div>
+
+    <div class="entry-top">
+      <span class="entry-brand">V·A</span>
+      <span class="entry-top-note">AI 视觉设计师</span>
+    </div>
+
+    <div class="entry-core" id="entry-core">
+      <p class="entry-kicker">AI VISUAL DESIGNER</p>
+      <h1 class="entry-title">生成<span class="dot">.</span></h1>
+      <p class="entry-prompt">prompt: 一位 AI 视觉设计师的个人作品集 · 暗色 · 克制 · 科技感<span class="caret" aria-hidden="true"></span></p>
+      <button class="btn btn-primary btn-lg" id="enter-btn" type="button">开始生成</button>
+    </div>
+
+    <div class="entry-bottom">
+      <span class="entry-hint">点击任意位置进入</span>
+      <span class="entry-ver">PORTFOLIO / 2026</span>
+    </div>
+  </div>
+
+  <!-- ============ 主站 ============ -->
+  <div class="site" id="site" tabindex="-1">
+
+    <header class="header" id="header">
+      <div class="wrap header-in">
+        <a class="brand" href="#top">V·A</a>
+        <nav class="nav" aria-label="主导航">
+          <a href="#about">关于</a>
+          <a href="#works">项目</a>
+          <a href="#strengths">优势</a>
+          <a href="#contact">联系</a>
+        </nav>
+        <div class="header-right">
+          <!-- ⚠️ 待替换：真实邮箱 -->
+          <a class="btn btn-ghost btn-sm" href="mailto:hello@yourname.com">开始合作</a>
+          <button class="menu-btn" id="menu-btn" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="menu">
+            <span></span><span></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 移动端菜单 -->
+    <div class="menu" id="menu" aria-hidden="true">
+      <nav class="menu-nav" aria-label="移动端导航">
+        <a href="#about" class="menu-link">关于</a>
+        <a href="#works" class="menu-link">项目</a>
+        <a href="#strengths" class="menu-link">优势</a>
+        <a href="#contact" class="menu-link">联系</a>
+      </nav>
+      <p class="menu-mail"><a href="mailto:hello@yourname.com">hello@yourname.com</a></p>
+    </div>
+
+    <main id="top">
+
+      <!-- 1. 首屏 Hero -->
+      <section class="hero">
+        <canvas id="hero-canvas" class="hero-canvas" aria-hidden="true"></canvas>
+        <!-- 3D 唱片画廊（three.js，js/hero-gallery.js；加载失败时自动回退上方粒子背景） -->
+        <canvas id="hero-gallery" class="hero-canvas hero-gallery" aria-hidden="true"></canvas>
+        <div class="wrap hero-in">
+          <p class="hero-label">AI 视觉设计师</p>
+          <h1 class="hero-title">把想象，<br>变成视觉<span class="dot">.</span></h1>
+          <p class="hero-sub">以生成式 AI 为核心工作流的视觉设计实践，服务品牌视觉、电商视觉与数字艺术项目，base 上海。</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#works">查看精选项目</a>
+            <a class="btn btn-ghost" href="#contact">和我聊聊</a>
+          </div>
+        </div>
+        <div class="hero-meta" aria-hidden="true">
+          <span id="seed"></span>
+          <span>STATUS ACTIVE</span>
+          <span>31.2°N 121.5°E</span>
+        </div>
+      </section>
+
+      <!-- 2. 个人经历 -->
+      <section class="sec" id="about">
+        <div class="wrap">
+          <div class="about-grid">
+            <figure class="about-portrait">
+              <!-- ⚠️ 待替换：真实头像 / 人物照（替换整个 svg 为 <img>，保持 4:5 比例） -->
+              <svg viewBox="0 0 600 750" role="img" aria-label="头像占位图">
+                <defs>
+                  <radialGradient id="pf-g" cx="50%" cy="38%" r="80%">
+                    <stop offset="0%" stop-color="#232a3d"/>
+                    <stop offset="100%" stop-color="#0f1218"/>
+                  </radialGradient>
+                  <filter id="pf-n">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+                    <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0"/>
+                  </filter>
+                </defs>
+                <rect width="600" height="750" fill="url(#pf-g)"/>
+                <circle cx="300" cy="330" r="120" fill="none" stroke="rgba(139,143,255,.55)" stroke-width="1.5"/>
+                <text x="300" y="346" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="44" fill="#e9ebf1" letter-spacing="2">V·A</text>
+                <rect width="600" height="750" filter="url(#pf-n)"/>
+                <text x="28" y="716" font-family="'IBM Plex Mono',monospace" font-size="12" fill="rgba(155,163,178,.7)" letter-spacing="2">PORTRAIT / 待替换</text>
+              </svg>
+            </figure>
+            <div class="about-body">
+              <div class="sec-head">
+                <p class="sec-label">关于</p>
+                <!-- ⚠️ 待替换：真实姓名 -->
+                <h2 class="sec-title">你好，我是<span class="ph">[你的名字]</span></h2>
+              </div>
+              <div class="about-text">
+                <p>一名专注生成式视觉的设计师。过去 5 年我在品牌与电商视觉领域工作，近两年将生成式 AI 深度融入创作流程，形成了「构思、生成、精修、交付」的完整工作流。</p>
+                <p>我相信 AI 不会取代设计师，但会用 AI 的设计师，能把更多时间留给真正的创意。让模型处理重复，把判断留给审美，这就是我的工作方式。</p>
+              </div>
+              <!-- ⚠️ 待替换：真实项目数据 -->
+              <ul class="stats">
+                <li><strong>120<span>+</span></strong><em>完成项目</em></li>
+                <li><strong>40<span>+</span></strong><em>合作品牌</em></li>
+                <li><strong>5</strong><em>年视觉经验</em></li>
+                <li><strong>3<span>×</span></strong><em>平均提效</em></li>
+              </ul>
+              <!-- ⚠️ 待替换：真实联系方式 -->
+              <ul class="contact-list">
+                <li><span>邮箱</span><a href="mailto:hello@yourname.com">hello@yourname.com</a></li>
+                <li><span>微信</span><span class="ph">your_wechat_id</span></li>
+                <li><span>小红书</span><span class="ph">@your_id</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 精选项目 -->
+      <section class="sec" id="works">
+        <div class="wrap">
+          <div class="sec-head">
+            <p class="sec-label">作品</p>
+            <h2 class="sec-title">精选项目</h2>
+            <p class="sec-note">2024–2025 年部分商业与艺术项目，完整案例可邮件索取。</p>
+          </div>
+
+          <!-- 项目由后台管理，瀑布流动态渲染（js/projects.js）；未启动后端时自动展示演示项目 -->
+          <div class="waterfall" id="works-grid">
+            <p class="works-loading">加载中…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. 个人优势 -->
+      <section class="sec" id="strengths">
+        <div class="wrap">
+          <div class="sec-head">
+            <p class="sec-label">优势</p>
+            <h2 class="sec-title">我能带来什么</h2>
+          </div>
+          <div class="strength-grid">
+            <div class="strength-col">
+              <h3 class="strength-label">我擅长</h3>
+              <div class="strength-item">
+                <h4>生成式视觉工作流</h4>
+                <p>从 Midjourney、Stable Diffusion 到 ComfyUI 可控管线，稳定产出符合商业标准的图像质量。</p>
+              </div>
+              <div class="strength-item">
+                <h4>品牌视觉系统</h4>
+                <p>VI、主视觉、延展物料的完整规范输出，保证线上线下风格统一。</p>
+              </div>
+            </div>
+            <div class="strength-col">
+              <h3 class="strength-label">我如何工作</h3>
+              <div class="strength-item">
+                <h4>先对齐，再生成</h4>
+                <p>在 brief 阶段用快速低成本的方案对齐审美方向，避免后期返工。</p>
+              </div>
+              <div class="strength-item">
+                <h4>精修到像素</h4>
+                <p>AI 输出只是起点，每一张交付稿都经过专业后期与细节打磨。</p>
+              </div>
+            </div>
+            <div class="strength-col">
+              <h3 class="strength-label">我解决什么</h3>
+              <div class="strength-item">
+                <h4>三倍交付速度</h4>
+                <p>传统两周的视觉项目，压缩到一周内完成，不牺牲质量。</p>
+              </div>
+              <div class="strength-item">
+                <h4>风格不漂移</h4>
+                <p>统一的风格引擎让批量物料保持一致，避免多人协作的观感割裂。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 5. 页尾联系区 -->
+    <footer class="footer" id="contact">
+      <div class="wrap">
+        <div class="footer-core">
+          <h2 class="footer-title">有一个想法，<br>一起把它生成出来<span class="dot">.</span></h2>
+          <p class="footer-sub">品牌视觉、电商素材或数字艺术，欢迎带着想法来聊。</p>
+          <!-- ⚠️ 待替换：真实邮箱 -->
+          <a class="btn btn-primary btn-lg" href="mailto:hello@yourname.com">发邮件给我</a>
+          <ul class="footer-links">
+            <li><span>微信</span><span class="ph">your_wechat_id</span></li>
+            <li><span>小红书</span><span class="ph">@your_id</span></li>
+            <li><span>站酷</span><span class="ph">待补充</span></li>
+          </ul>
+        </div>
+        <div class="footer-bar">
+          <!-- ⚠️ 待替换：姓名 / 备案号 -->
+          <p>© 2026 <span class="ph">[你的名字]</span> · AI 视觉设计师 · 沪ICP备XXXXXXXX号</p>
+          <a href="#top" class="to-top">返回顶部</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="js/projects.js"></script>
+  <script src="js/hero-gallery.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>作品集后台 · V·A</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0c10'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%238b8fff' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%235fd9ff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+  <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Chivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- 登录 -->
+  <section class="view view-login" id="view-login">
+    <div class="login-card">
+      <p class="login-brand">V·A</p>
+      <h1 class="login-title">作品集后台</h1>
+      <p class="login-sub">输入密码进入管理</p>
+      <form id="login-form" novalidate>
+        <input type="password" id="login-pw" class="input" placeholder="后台密码" autocomplete="current-password" autofocus>
+        <button type="submit" class="btn btn-primary btn-block" id="login-btn">进入后台</button>
+      </form>
+      <p class="login-error" id="login-error" hidden></p>
+    </div>
+  </section>
+
+  <!-- 管理 -->
+  <section class="view view-manager" id="view-manager" hidden>
+    <header class="abar">
+      <div class="abar-in">
+        <span class="abar-brand">V·A <em>作品集后台</em></span>
+        <div class="abar-actions">
+          <button class="btn btn-primary btn-sm" id="btn-add" type="button">新增项目</button>
+          <button class="btn btn-ghost btn-sm" id="btn-logout" type="button">退出登录</button>
+        </div>
+      </div>
+    </header>
+    <main class="amain">
+      <p class="ahint" id="list-status">加载中…</p>
+      <ul class="plist" id="project-list"></ul>
+    </main>
+  </section>
+
+  <!-- 新增 / 编辑弹窗 -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 class="modal-title" id="modal-title">新增项目</h2>
+      <form id="project-form" novalidate>
+        <label class="field">
+          <span class="field-label">项目标题 *</span>
+          <input class="input" name="title" required maxlength="60" placeholder="例：涌动 · 品牌视觉全案">
+        </label>
+        <div class="frow">
+          <label class="field">
+            <span class="field-label">分类</span>
+            <input class="input" name="category" list="cat-list" maxlength="20" placeholder="品牌视觉">
+            <datalist id="cat-list">
+              <option value="品牌视觉"></option>
+              <option value="电商视觉"></option>
+              <option value="数字艺术"></option>
+              <option value="活动视觉"></option>
+            </datalist>
+          </label>
+          <label class="field">
+            <span class="field-label">年份</span>
+            <input class="input" name="year" maxlength="8" placeholder="2025">
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">一句话描述</span>
+          <textarea class="input" name="desc" rows="3" maxlength="200" placeholder="用一句话说明项目内容与亮点"></textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">工具标签（逗号分隔）</span>
+          <input class="input" name="tags" maxlength="120" placeholder="Midjourney, Photoshop">
+        </label>
+        <label class="field">
+          <span class="field-label" id="image-label">项目图片 *</span>
+          <input type="file" id="image-input" name="image" accept="image/jpeg,image/png,image/webp,image/gif">
+          <img id="image-preview" class="image-preview" alt="图片预览" hidden>
+        </label>
+        <p class="form-error" id="form-error" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="btn-cancel">取消</button>
+          <button type="submit" class="btn btn-primary" id="btn-save">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

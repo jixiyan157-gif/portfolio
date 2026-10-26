@@ -1,0 +1,14 @@
+{
+  "name": "portfolio-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "个人作品集轻量后端：静态托管 + 项目管理 API + 图片上传",
+  "scripts": {
+    "start": "node server.js",
+    "set-password": "node server.js --set-password"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^2.0.0"
+  }
+}
