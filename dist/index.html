@@ -937,6 +937,7 @@ body.entered .cyl-wrap { opacity: 1; }
   }
   function showVideoViewer(p, trigger) {
     if (!videoViewer) return;
+    pauseOtherVideos(videoViewerPlayer);
     videoViewerTrigger = trigger;
     videoViewerTitle.textContent = p.title;
     videoViewerPlayer.src = p.video;
@@ -949,6 +950,18 @@ body.entered .cyl-wrap { opacity: 1; }
   }
   if (videoViewerClose) videoViewerClose.addEventListener('click', closeVideoViewer);
   if (videoViewer) videoViewer.addEventListener('click', (e) => { if (e.target === videoViewer) closeVideoViewer(); });
+
+  /* ---------- 同一时间只允许一条视频播放 ---------- */
+  function pauseOtherVideos(keep) {
+    document.querySelectorAll('video').forEach((v) => {
+      if (v !== keep && !v.paused) v.pause();
+    });
+  }
+  // play 事件不冒泡，用捕获阶段监听：任一开始播放即自动暂停其他视频
+  document.addEventListener('play', (e) => {
+    const target = e.target;
+    if (target && target.tagName === 'VIDEO') pauseOtherVideos(target);
+  }, true);
   function closeViewer() {
     if (!viewer) return;
     viewer.hidden = true;
