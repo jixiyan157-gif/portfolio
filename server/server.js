@@ -90,6 +90,12 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: '未登录或登录已过期' });
 }
 
+function safeExternalUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try { const url = new URL(raw); return url.protocol === 'https:' ? url.toString().slice(0, 500) : ''; } catch { return ''; }
+}
+
 function parseTags(raw) {
   if (Array.isArray(raw)) return raw.map(String).map((s) => s.trim()).filter(Boolean).slice(0, 12);
   if (typeof raw === 'string') return raw.split(/[,，]/).map((s) => s.trim()).filter(Boolean).slice(0, 12);
@@ -136,6 +142,7 @@ app.post('/api/projects', requireAuth, upload.single('image'), (req, res, next) 
       year: String(b.year || '').trim().slice(0, 8),
       desc: String(b.desc || '').trim().slice(0, 200),
       tags: parseTags(b.tags),
+      externalUrl: safeExternalUrl(b.externalUrl),
       image: '/uploads/' + req.file.filename,
       createdAt: Date.now(),
     };
@@ -156,6 +163,7 @@ app.put('/api/projects/:id', requireAuth, upload.single('image'), (req, res, nex
     p.year = String(b.year || '').trim().slice(0, 8);
     p.desc = String(b.desc || '').trim().slice(0, 200);
     p.tags = parseTags(b.tags);
+    p.externalUrl = safeExternalUrl(b.externalUrl);
     if (req.file) { removeImage(p.image); p.image = '/uploads/' + req.file.filename; }
     saveProjects(list);
     res.json(p);

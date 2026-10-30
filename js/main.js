@@ -186,6 +186,7 @@
 
     body.classList.add('entered');
     body.classList.remove('no-scroll');
+    updateHeader();
     entry.classList.add('is-leaving');
     enterBtn.disabled = true;
 
@@ -217,9 +218,11 @@
   }
 
   /* ---------- 导航滚动状态 ---------- */
-  window.addEventListener('scroll', () => {
+  function updateHeader() {
     header.classList.toggle('scrolled', window.scrollY > 24);
-  }, { passive: true });
+  }
+  window.addEventListener('scroll', updateHeader, { passive: true });
+  updateHeader();
 
   /* ---------- 移动端菜单 ---------- */
   function setMenu(open) {

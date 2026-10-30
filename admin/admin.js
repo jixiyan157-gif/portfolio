@@ -157,6 +157,7 @@
       projectForm.elements.year.value = p.year || '';
       projectForm.elements.desc.value = p.desc || '';
       projectForm.elements.tags.value = (p.tags || []).join(', ');
+      projectForm.elements.externalUrl.value = p.externalUrl || '';
       if (p.image) {
         imagePreview.src = p.image;
         imagePreview.hidden = false;

@@ -6,6 +6,16 @@ tools/
 preview/
 # 构建产物
 作品集离线版.html
+# 调试与日志
+dist/_verify*.png
+dist/preview-server.log
+# 超过 GitHub 100MB 限制的视频（仅保留本地）
+media/videos/furniture-tvc.mp4
+media/videos/mirror-world.mp4
+media/videos/water-heater-tvc.mp4
+dist/media/videos/furniture-tvc.mp4
+dist/media/videos/mirror-world.mp4
+dist/media/videos/water-heater-tvc.mp4
 # 系统文件
 Thumbs.db
 .DS_Store

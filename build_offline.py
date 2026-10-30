@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-生成「作品集离线版.html」—— 单文件、无需联网、任何浏览器直接打开
-打包内容：全部页面 + 样式 + 脚本 + three.js + 后台项目数据与图片（base64）
-用法：先启动后端（cd server && npm start），再运行  python build_offline.py
+生成离线预览目录：index.html 内嵌页面代码、项目数据、图片；视频作为独立媒体文件随目录播放。
+用法：运行 python build_offline.py --out dist/index.html，随后打开 dist/index.html。
 """
 import base64
 import json
 import os
+import shutil
 import re
 import sys
 import urllib.request
@@ -51,6 +51,16 @@ def inline_css(html):
     )
     return html
 
+def inline_portrait(html):
+    """内嵌个人头像，保证 dist/index.html 可独立预览。"""
+    rel = "uploads/works/portrait-jixiyan.jpg"
+    path = os.path.join(ROOT, rel.replace("/", os.sep))
+    if not os.path.isfile(path):
+        return html
+    with open(path, "rb") as f:
+        data = base64.b64encode(f.read()).decode()
+    return html.replace('src="' + rel + '"', 'src="data:image/jpeg;base64,' + data + '"')
+
 def drop_web_fonts(html):
     # 离线版去掉网络字体（回退系统字体，观感接近）
     html = re.sub(r'<link rel="preconnect"[^>]*fonts\.loli\.net[^>]*>', "", html)
@@ -68,24 +78,58 @@ def inline_scripts(html):
     return html
 
 def embed_projects(html):
-    """从后端拉取项目数据与图片，注入为 window.__EMBEDDED_PROJECTS"""
+    """将项目数据与图片内嵌，支持后端在线和本地离线构建。"""
     try:
         with urllib.request.urlopen(API + "/api/projects", timeout=10) as r:
             projects = json.load(r)
     except Exception as e:
-        print("[提示] 无法连接后端，离线版将使用内置演示项目：", e)
-        return html
-    for p in projects:
         try:
-            with urllib.request.urlopen(API + p["image"], timeout=20) as r:
-                b = r.read()
-            p["image"] = "data:image/png;base64," + base64.b64encode(b).decode()
+            projects = json.loads(read("server/data/projects.json"))
+            print("[提示] 使用本地项目清单生成离线版：", e)
+        except Exception as local_error:
+            print("[提示] 无法读取项目数据，将使用前端演示项目：", local_error)
+            return html
+    for p in projects:
+        image = p.get("image", "")
+        if image.startswith("data:"):
+            continue
+        rel = image.lstrip("/\\")
+        local_path = os.path.join(ROOT, rel.replace("/", os.sep))
+        try:
+            if os.path.isfile(local_path):
+                with open(local_path, "rb") as f:
+                    b = f.read()
+            else:
+                url_path = "/" + rel.replace("\\", "/")
+                with urllib.request.urlopen(API + url_path, timeout=20) as r:
+                    b = r.read()
+            ext = os.path.splitext(local_path)[1].lower()
+            mime = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif", ".svg": "image/svg+xml"}.get(ext, "application/octet-stream")
+            p["image"] = "data:" + mime + ";base64," + base64.b64encode(b).decode()
         except Exception as e:
-            print("[跳过图片]", p["title"], e)
+            print("[跳过图片]", p.get("title", "(未命名)"), e)
             p["image"] = ""
     payload = "<script>window.__EMBEDDED_PROJECTS = " + json.dumps(projects, ensure_ascii=False) + ";</script>"
     html = html.replace("</head>", payload + "\n</head>")
     return html
+
+def copy_media(out_file):
+    """将压缩后的网页视频复制到 HTML 同级目录，支持本地离线播放。"""
+    source = os.path.join(ROOT, "media", "videos")
+    if not os.path.isdir(source):
+        return
+    target = os.path.join(os.path.dirname(os.path.abspath(out_file)), "media", "videos")
+    os.makedirs(target, exist_ok=True)
+    for name in os.listdir(source):
+        if not name.lower().endswith(".mp4"):
+            continue
+        src = os.path.join(source, name)
+        dst = os.path.join(target, name)
+        if os.path.abspath(src) != os.path.abspath(dst):
+            shutil.copy2(src, dst)
+    guide = os.path.join(os.path.dirname(os.path.abspath(out_file)), "使用说明.txt")
+    with open(guide, "w", encoding="utf-8") as f:
+        f.write("离线预览：直接打开 index.html。\n请保留同目录下的 media/videos 文件夹，视频项目从该目录播放。\nUnicorn Studio 首页动效需要联网加载。\n")
 
 def main():
     out = OUT
@@ -95,11 +139,13 @@ def main():
     ensure_three()
     html = read("index.html")
     html = inline_css(html)
+    html = inline_portrait(html)
     html = drop_web_fonts(html)
     html = embed_projects(html)
     html = inline_scripts(html)
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)
+    copy_media(out)
     print("已生成:", out, "(%.1f MB)" % (os.path.getsize(out) / 1048576))
 
 if __name__ == "__main__":

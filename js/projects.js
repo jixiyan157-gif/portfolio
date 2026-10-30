@@ -11,6 +11,63 @@
   const container = document.getElementById('works-grid');
   if (!container) return;
 
+  const viewer = document.getElementById('image-viewer');
+  const viewerImage = document.getElementById('image-viewer-image');
+  const viewerTitle = document.getElementById('image-viewer-title');
+  const viewerClose = document.getElementById('image-viewer-close');
+
+  const videoViewer = document.getElementById('video-viewer');
+  const videoViewerTitle = document.getElementById('video-viewer-title');
+  const videoViewerPlayer = document.getElementById('video-viewer-player');
+  const videoViewerClose = document.getElementById('video-viewer-close');
+  let videoViewerTrigger = null;
+  function closeVideoViewer() {
+    if (!videoViewer || videoViewer.hidden) return;
+    videoViewerPlayer.pause();
+    videoViewerPlayer.removeAttribute('src');
+    videoViewerPlayer.removeAttribute('poster');
+    videoViewerPlayer.load();
+    videoViewer.hidden = true;
+    document.body.classList.remove('video-view-open');
+    if (videoViewerTrigger) videoViewerTrigger.focus();
+  }
+  function showVideoViewer(p, trigger) {
+    if (!videoViewer) return;
+    videoViewerTrigger = trigger;
+    videoViewerTitle.textContent = p.title;
+    videoViewerPlayer.src = p.video;
+    videoViewerPlayer.poster = p.image || '';
+    videoViewerPlayer.setAttribute('aria-label', p.title + ' 大屏视频播放器');
+    videoViewer.hidden = false;
+    document.body.classList.add('video-view-open');
+    videoViewerClose.focus();
+    videoViewerPlayer.play().catch(() => {});
+  }
+  if (videoViewerClose) videoViewerClose.addEventListener('click', closeVideoViewer);
+  if (videoViewer) videoViewer.addEventListener('click', (e) => { if (e.target === videoViewer) closeVideoViewer(); });
+  function closeViewer() {
+    if (!viewer) return;
+    viewer.hidden = true;
+    document.body.classList.remove('image-view-open');
+    viewerImage.removeAttribute('src');
+  }
+  function showDetail(p) {
+    if (!viewer) return;
+    viewerTitle.textContent = p.title;
+    viewerImage.src = p.image;
+    viewerImage.alt = p.title + '，完整高分辨率详情页';
+    viewer.hidden = false;
+    document.body.classList.add('image-view-open');
+    viewerClose.focus();
+  }
+  if (viewerClose) viewerClose.addEventListener('click', closeViewer);
+  if (viewer) viewer.addEventListener('click', (e) => { if (e.target === viewer) closeViewer(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (videoViewer && !videoViewer.hidden) closeVideoViewer();
+    else if (viewer && !viewer.hidden) closeViewer();
+  });
+
   /* ---------- 演示占位图（程序生成 SVG，后端未启动时兜底展示） ---------- */
   function demoArt(i) {
     const art = [
@@ -60,12 +117,39 @@
   /* ---------- 卡片构建 ---------- */
   function cardEl(p) {
     const card = el('article', 'wf-card');
+    card.dataset.projectId = p.id || '';
+    if ((p.id || '').startsWith('zero-era-')) card.classList.add('wf-card--video-cover');
     const fig = el('figure', 'wf-visual');
-    const img = el('img');
-    img.src = p.image;
-    img.alt = p.title || '项目图片';
-    img.addEventListener('load', () => waterfall.layout());
-    fig.appendChild(img);
+    if (p.video) {
+      const video = el('video', 'wf-video');
+      video.src = p.video;
+      video.poster = p.image || '';
+      video.controls = true;
+      video.preload = 'metadata';
+      video.playsInline = true;
+      video.setAttribute('aria-label', p.title + ' 视频播放器');
+      video.addEventListener('loadedmetadata', () => waterfall.layout());
+      fig.appendChild(video);
+    } else {
+      const img = el('img');
+      const isDetailPage = p.id === 'work-chair-detail' || p.id === 'work-mouse-detail';
+      if (isDetailPage) {
+        card.classList.add('wf-card--detail');
+        img.className = 'wf-detail-preview';
+      }
+      img.classList.add('wf-image-expand');
+      img.tabIndex = 0;
+      img.setAttribute('role', 'button');
+      img.setAttribute('aria-label', '点击查看完整图片：' + p.title);
+      img.addEventListener('click', () => showDetail(p));
+      img.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDetail(p); }
+      });
+      img.src = p.image;
+      img.alt = p.title || '项目图片';
+      img.addEventListener('load', () => waterfall.layout());
+      fig.appendChild(img);
+    }
     if (p.year) fig.appendChild(el('span', 'work-year', p.year));
     card.appendChild(fig);
 
@@ -79,6 +163,20 @@
       const tags = el('ul', 'work-tags');
       p.tags.forEach((t) => tags.appendChild(el('li', null, t)));
       info.appendChild(tags);
+    }
+    if (p.video) {
+      const expand = el('button', 'work-watch-link work-video-open', '大屏播放');
+      expand.type = 'button';
+      expand.addEventListener('click', () => showVideoViewer(p, expand));
+      info.appendChild(expand);
+    }
+    if (p.externalUrl) {
+      const link = el('a', 'work-watch-link', '抖音观看');
+      link.href = p.externalUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.setAttribute('aria-label', '在抖音观看：' + p.title);
+      info.appendChild(link);
     }
     card.appendChild(info);
     return card;
