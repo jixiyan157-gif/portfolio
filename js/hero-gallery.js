@@ -15,8 +15,6 @@
   if (!canvas) return;
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // 移动端/低性能设备：降低渲染分辨率并关闭抗锯齿，显著减少 GPU 填充压力
-  const isCoarse = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 860;
   const CDN_LIST = [
     'https://registry.npmmirror.com/three/0.160.0/files/build/three.min.js',
     'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js',
@@ -99,8 +97,8 @@
 
   /* ---------- 构建场景 ---------- */
   function build() {
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !isCoarse });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isCoarse ? 1.5 : 2));
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0);
 
     const scene = new THREE.Scene();
@@ -116,9 +114,9 @@
     const cyan = new THREE.PointLight(0x5fd9ff, 26, 26, 2);
     cyan.position.set(6, -3, 3);
     scene.add(cyan);
-    // 光标跟随灯：移动端没有指针，直接跳过以省掉一个点光源的开销
-    const cursorLight = isCoarse ? null : new THREE.PointLight(0xffffff, 22, 16, 2);
-    if (cursorLight) { cursorLight.position.set(0, 0, 3.5); scene.add(cursorLight); }
+    const cursorLight = new THREE.PointLight(0xffffff, 22, 16, 2);
+    cursorLight.position.set(0, 0, 3.5);
+    scene.add(cursorLight);
 
     // 唱片行（整体作为滚动主体）
     const group = new THREE.Group();
@@ -231,12 +229,10 @@
 
     /* ---------- 动画 ---------- */
     let running = true;
-    // 画廊滚出视口后停止渲染，避免用户浏览作品区时后台仍在全速跑 3D（移动端发热掉帧的主因）
-    let inViewport = true;
     const clock = new THREE.Clock();
 
     function tick() {
-      if (!running || !inViewport) return;
+      if (!running) return;
       const t = clock.getElapsedTime();
 
       // 惯性
@@ -255,11 +251,9 @@
       camera.rotation.x += (camTarget.y - camera.rotation.x) * 0.05;
       camera.position.y = Math.cos(t * 0.2) * 0.06;
 
-      if (cursorLight) {
-        cursorLight.position.x = pointer.x * 3.6;
-        cursorLight.position.y = -pointer.y * 2.4;
-        cursorLight.position.z = 3.5;
-      }
+      cursorLight.position.x = pointer.x * 3.6;
+      cursorLight.position.y = -pointer.y * 2.4;
+      cursorLight.position.z = 3.5;
 
       for (const d of discs) {
         const ph = d.userData.phase;
@@ -274,14 +268,6 @@
       renderer.render(scene, camera);
     } else {
       tick();
-    }
-
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver((entries) => {
-        const vis = entries.some((e) => e.isIntersecting);
-        if (vis && !inViewport) { inViewport = true; if (!reduceMotion) tick(); }
-        else if (!vis) { inViewport = false; }
-      }, { rootMargin: '150px' }).observe(canvas);
     }
 
     document.addEventListener('visibilitychange', () => {
