@@ -209,19 +209,9 @@ body.menu-open .menu { opacity: 1; visibility: visible; }
   overflow: hidden;
 }
 .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .8; z-index: 0; }
+.hero-gallery { opacity: 1; }
 .unicorn-banner { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
-/* 固定 1440x900 设计舞台（与嵌入代码一致）：场景内部构图/断点不随视口变化，
-   仅整体等比缩放铺满 Hero（cover），屏幕缩放时画面保持不变 */
-.unicorn-stage {
-  position: absolute; top: 50%; left: 50%;
-  width: 1440px; height: 900px;
-  transform: translate(-50%, -50%) scale(1);
-  transform-origin: center center;
-}
-.unicorn-stage [data-us-project] { width: 100% !important; height: 100% !important; min-height: 100%; }
-/* 隐藏 Unicorn Studio 水印徽标 */
-/* 隐藏 Unicorn Studio 水印徽标（覆盖容器内一切外链） */
-.unicorn-banner a[href*="unicorn"], .unicorn-banner a { display: none !important; visibility: hidden !important; }
+.unicorn-banner [data-us-project] { width: 100% !important; height: 100% !important; min-height: 100%; }
 .hero::before {
   content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background: linear-gradient(90deg, rgba(10, 12, 16, .28), rgba(10, 12, 16, .1) 42%, transparent 60%);
@@ -359,6 +349,7 @@ body.entered .hero-in > :nth-child(4) { transition-delay: .94s; }
   .hero::before {
     background: linear-gradient(180deg, rgba(10, 12, 16, .22), rgba(10, 12, 16, .28) 55%, rgba(10, 12, 16, .42));
   }
+  .hero-gallery { opacity: .8; }
 }
 
 @media (max-width: 640px) {
@@ -383,7 +374,7 @@ body.entered .hero-in > :nth-child(4) { transition-delay: .94s; }
 
 
 
-.wf-video { display: block; width: 100%; height: auto; background: #050608; }
+.wf-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #050608; }
 .wf-video:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 /* 详情页作品：精简瀑布流预览，点开查看完整高分辨率原图 */
 .wf-card .wf-visual img.wf-detail-preview { display: block; width: 100%; height: 560px; object-fit: cover; object-position: center top; cursor: zoom-in; background: #f4f3ef; }
@@ -513,169 +504,20 @@ body { background: #0a0c10; }
 .wf-image-expand { cursor: zoom-in; }
 .wf-image-expand:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-
-/* ============ 自定义光标（参考 takuya-oshima.com 鼠标效果） ============
-   白色圆点 + 白色描边圆环，mix-blend-mode: difference 反色；
-   圆点即时跟随，圆环延迟缓动跟随；悬停交互元素时圆点放大、圆环收缩。
-   仅桌面端（pointer: fine 且视口 >= 960px）启用，移动端保持系统光标。 */
-.cursor-dot, .cursor-ring {
-  position: fixed; top: 0; left: 0; z-index: 9999;
-  pointer-events: none;
-  mix-blend-mode: difference;
-  opacity: 0;
-  transition: opacity .35s ease;
-  will-change: transform;
-  display: none;
-}
-.cursor-dot > span, .cursor-ring > span {
-  display: block; width: 100%; height: 100%; border-radius: 50%;
-  transition: transform .3s var(--ease);
-}
-.cursor-dot { width: 8px; height: 8px; }
-.cursor-dot > span { background: #fff; }
-.cursor-ring { width: 56px; height: 56px; }
-.cursor-ring > span { border: 1.5px solid #fff; }
-body.cursor-visible .cursor-dot, body.cursor-visible .cursor-ring { opacity: 1; }
-body.cursor-hover .cursor-dot > span { transform: scale(1.25); }
-body.cursor-hover .cursor-ring > span { transform: scale(.5714); }
-@media (min-width: 960px) and (pointer: fine) {
-  .cursor-dot, .cursor-ring { display: block; }
-  body.custom-cursor, body.custom-cursor * { cursor: none !important; }
+/* ============ 移动端 / 触屏设备性能降级 ============ */
+@media (pointer: coarse), (max-width: 860px) {
+  /* 固定的 backdrop-filter 在滚动时持续重算模糊，是低端 GPU 上最重的开销之一 */
+  .header, .menu, .image-viewer, .image-viewer-title, .video-viewer {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  /* 关闭 hover 缩放与过渡，减少触屏误触时的整卡重绘 */
+  .wf-card:hover .wf-visual img { transform: none; }
+  .wf-visual img { transition: none; }
 }
 
-/* ============ 入口页 v2：Paragon 式自动进入（黑场 LOGO → 大标题揭示 → 淡入主站） ============ */
-.entry-canvas, .entry-flash { display: none !important; }
-.entry { background: #060709; }
-
-/* 第一阶段：中央品牌标识 */
-.entry-logo {
-  position: absolute; left: 50%; top: 50%; z-index: 2;
-  transform: translate(-50%, -50%);
-  font-size: 30px; font-weight: 700; letter-spacing: .14em; color: #fff;
-  opacity: 0;
-  animation: entryLogoIn .7s var(--ease) .25s forwards, entryLogoOut .45s ease 1.55s forwards;
-}
-@keyframes entryLogoIn { from { opacity: 0; transform: translate(-50%,-50%) scale(.9); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
-@keyframes entryLogoOut { to { opacity: 0; transform: translate(-50%,-50%) scale(1.08); } }
-
-/* 第二阶段：顶部跑马灯滑入 */
-.entry-marquee {
-  position: relative; overflow: hidden; white-space: nowrap;
-  border-bottom: 1px solid var(--line);
-  padding: 12px 0;
-  opacity: 0; transform: translateY(-101%);
-  animation: entryBarIn .7s var(--ease) 1.6s forwards;
-}
-@keyframes entryBarIn { to { opacity: 1; transform: none; } }
-.entry-marquee-track { display: inline-flex; flex: none; animation: entryMarqueeMove 22s linear 1.6s infinite; }
-.entry-marquee-track > span {
-  flex: none;
-  font-family: var(--mono); font-size: 11px; letter-spacing: .28em; color: var(--text-3);
-}
-.entry-marquee-track em { color: var(--accent); font-style: normal; }
-@keyframes entryMarqueeMove { to { transform: translateX(-50%); } }
-
-/* 第三阶段：姓名遮罩揭示（自上而下）+ 标语浮现 */
-.entry-kicker { animation: entryFadeUp .6s var(--ease) 1.9s both; }
-.entry-name { font-size: clamp(64px, 13vw, 150px); font-weight: 600; line-height: 1.12; letter-spacing: .06em; }
-.entry-name-mask { display: inline-block; overflow: hidden; padding: .06em .08em; margin: -.06em -.08em; vertical-align: bottom; }
-.entry-name-text { display: inline-block; transform: translateY(-108%); animation: entryNameIn .95s var(--ease) 1.75s forwards; }
-@keyframes entryNameIn { to { transform: translateY(0); } }
-.entry-tagline { margin-top: 18px; font-size: 14px; letter-spacing: .14em; color: var(--text-2); animation: entryFadeUp .7s var(--ease) 2.45s both; }
-@keyframes entryFadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-
-/* 底栏延迟浮现 */
-.entry-bottom { opacity: 0; animation: entryFadeUp .6s ease 2.7s forwards; }
-
-@media (prefers-reduced-motion: reduce) {
-  .entry-logo, .entry-marquee, .entry-kicker, .entry-name-text, .entry-tagline, .entry-bottom { animation-duration: .01s !important; animation-delay: 0s !important; }
-  .entry-marquee-track { animation: none !important; }
-}
-
-/* ============ 作品区交互 v2（参考 chdartmaker.com） ============ */
-/* 卡片：滚动进入视口时交错淡入上滑 */
-.wf-card { opacity: 0; }
-.wf-card.in {
-  opacity: 1;
-  transform: translate(var(--wfx, 0px), var(--wfy, 0px));
-  transition: opacity .6s var(--ease), transform .6s var(--ease), border-color .3s, box-shadow .3s;
-}
-/* 悬停：图片加深放大 */
-.wf-card:hover .wf-visual img { transform: scale(1.06); transition-duration: .45s; }
-/* 悬停：右下角箭头圆钮滑入 */
-.wf-arrow {
-  position: absolute; right: 14px; bottom: 14px; z-index: 2;
-  width: 38px; height: 38px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--accent); color: #fff; font-size: 17px; line-height: 1;
-  opacity: 0; transform: translate(10px, 10px);
-  transition: opacity .35s var(--ease), transform .35s var(--ease);
-  pointer-events: none;
-}
-.wf-card:hover .wf-arrow { opacity: 1; transform: none; }
-/* 悬停：标题提亮 + 下划线自左向右揭示 */
-.wf-card .work-head h3 { position: relative; display: inline-block; transition: color .35s var(--ease); }
-.wf-card .work-head h3::after {
-  content: ""; position: absolute; left: 0; bottom: -4px; height: 1.5px; width: 100%;
-  background: var(--accent);
-  transform: scaleX(0); transform-origin: right center;
-  transition: transform .45s var(--ease);
-}
-.wf-card:hover .work-head h3 { color: #fff; }
-.wf-card:hover .work-head h3::after { transform: scaleX(1); transform-origin: left center; }
-/* 章节标题：逐行遮罩揭示 + 标签/注释淡入上滑 */
-.sec-title .st-line { display: block; overflow: hidden; padding: .05em 0; margin: -.05em 0; }
-.sec-title .st-in { display: inline-block; transform: translateY(112%); transition: transform .85s var(--ease); }
-.sec-head.in .st-in { transform: translateY(0); }
-.sec-head .sec-label, .sec-head .sec-note { opacity: 0; transform: translateY(14px); transition: opacity .6s var(--ease), transform .6s var(--ease); }
-.sec-head.in .sec-label, .sec-head.in .sec-note { opacity: 1; transform: none; transition-delay: .15s; }
-@media (prefers-reduced-motion: reduce) {
-  .wf-card, .sec-head .sec-label, .sec-head .sec-note { opacity: 1 !important; transform: none !important; transition: none !important; }
-  .sec-title .st-in { transform: none !important; transition: none !important; }
-}
-
-/* ============ 首屏 Banner v2：3D 圆柱旋转画廊（参考 fabandfab.com） ============ */
-.unicorn-banner { display: none !important; }   /* 隐藏 Unicorn 场景 */
-.cyl-wrap {
-  position: absolute; inset: 0; z-index: 2; overflow: hidden;
-  perspective: 1500px; perspective-origin: 50% 42%;
-  pointer-events: none;
-  opacity: 0; transition: opacity 1.2s var(--ease) .3s;
-  mask-image: linear-gradient(180deg, #000 72%, transparent 99%);
-  -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent 99%);
-}
-body.entered .cyl-wrap { opacity: 1; }
-.cyl {
-  position: absolute; top: 50%; left: 50%;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.cyl-panel {
-  position: absolute; top: 0; left: 0;
-  overflow: hidden; border-radius: 6px;
-  border: 1px solid rgba(255,255,255,.06);
-  backface-visibility: hidden;
-  background: var(--bg-3);
-}
-.cyl-panel img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cyl-panel::after {            /* 面板明暗：背光处压暗 */
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(6,7,9,.15), rgba(6,7,9,0) 40%, rgba(6,7,9,.45));
-}
-.cyl-floor {                   /* 底部投影面 */
-  position: absolute; top: 50%; left: 50%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(255,45,120,.10), rgba(255,45,120,.04) 55%, transparent 72%);
-  filter: blur(2px);
-}
-@media (max-width: 720px) {
-  .cyl-wrap { perspective: 1100px; perspective-origin: 50% 38%; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cyl-wrap { opacity: .85; }
-}
 </style>
-<script>window.__EMBEDDED_PROJECTS = [{"id":"work-ai-data","title":"视觉数据平台 · 引导页","category":"数字产品","desc":"以数据总览、功能模块与分析能力为线索，梳理产品引导页的信息与视觉层级。","tags":["产品体验","引导视觉"],"image":"media/covers/work-ai-data.webp","createdAt":1792978972273},{"id":"work-music-app","title":"音乐 App · 曲库体验","category":"数字产品","desc":"从歌曲同步、个性推荐到播放场景，呈现移动端曲库产品的使用体验。","tags":["移动界面","引导视觉"],"image":"media/covers/work-music-app.webp","createdAt":1792978972272},{"id":"work-beauty-app","title":"美妆 App · 功能引导","category":"数字产品","desc":"围绕护肤品牌与产品信息，组织轻盈、柔和的移动端引导画面。","tags":["移动界面","美妆"],"image":"media/covers/work-beauty-app.webp","createdAt":1792978972271},{"id":"work-notes-app","title":"记事本 App · 入门体验","category":"数字产品","desc":"以任务清单和数据反馈呈现记事与规划流程，让功能信息清晰易读。","tags":["移动界面","效率工具"],"image":"media/covers/work-notes-app.webp","createdAt":1792978972270},{"id":"work-thermos","title":"保温杯 · 电商视觉","category":"产品电商","desc":"围绕保温杯产品，组合主图与横版商品展示画面。","tags":["产品视觉","电商"],"image":"media/covers/work-thermos.webp","createdAt":1792978972269},{"id":"work-charger","title":"无线充电器 · 产品视觉","category":"产品电商","desc":"通过产品主图与横版画面呈现桌面无线充电设备。","tags":["产品视觉","电商"],"image":"media/covers/work-charger.webp","createdAt":1792978972268},{"id":"work-posters","title":"电商海报 · 商品视觉系列","category":"电商视觉","desc":"以饮品、护肤与食品等商品画面，呈现不同的电商海报表达。","tags":["商品海报","电商"],"image":"media/covers/work-posters.webp","createdAt":1792978972267},{"id":"work-dehydrator-poster","title":"果蔬脱水机 · 电商海报","category":"电商视觉","desc":"通过清新厨房场景呈现多功能果蔬脱水机的核心卖点。","tags":["电商海报","产品推广"],"image":"media/covers/work-dehydrator-poster.webp","createdAt":1792978972263},{"id":"work-earbuds-poster","title":"睡眠耳机 · 电商海报","category":"电商视觉","desc":"以柔和居家场景突出无线降噪睡眠耳机的佩戴体验。","tags":["电商海报","产品推广"],"image":"media/covers/work-earbuds-poster.webp","createdAt":1792978972262},{"id":"work-tea-poster","title":"冷泡好茶 · 电商海报","category":"电商视觉","desc":"以清凉通透的画面呈现夏日冷泡茶饮的促销氛围。","tags":["电商海报","产品推广"],"image":"media/covers/work-tea-poster.webp","createdAt":1792978972261},{"id":"work-film-nightecho","title":"《夜行回声》· 电影海报","category":"海报设计","desc":"以雨夜街头的横版构图探索悬疑叙事表达。","tags":["电影海报","视觉叙事"],"image":"media/covers/work-film-nightecho.webp","createdAt":1792978972263},{"id":"work-film-lighthouse","title":"《雾中灯塔》· 电影海报","category":"海报设计","desc":"以迷雾海岸与光束表现神秘冒险的电影气质。","tags":["电影海报","视觉叙事"],"image":"media/covers/work-film-lighthouse.webp","createdAt":1792978972262},{"id":"work-film-lateletter","title":"《晚灯信笺》· 电影海报","category":"海报设计","desc":"以灯火与信笺营造独处时刻的叙事氛围。","tags":["电影海报","视觉叙事"],"image":"media/covers/work-film-lateletter.webp","createdAt":1792978972261},{"id":"work-chair-detail","title":"电竞椅 · 详情页视觉","category":"产品电商","desc":"围绕电竞椅产品展示卖点信息、材质与使用场景。","tags":["产品详情","信息设计"],"image":"media/covers/work-chair-detail.webp","createdAt":1792978972264},{"id":"work-mouse-detail","title":"鼠标 · 详情页视觉","category":"产品电商","desc":"以长页结构组织鼠标外观与产品信息，呈现完整详情页视觉。","tags":["产品详情","信息设计"],"image":"media/covers/work-mouse-detail.webp","createdAt":1792978972263},{"id":"work-meituan","title":"美团 · 开屏视觉","category":"品牌视觉","desc":"以高对比色彩和主题画面构成移动端开屏视觉。","tags":["开屏","品牌传播"],"image":"media/covers/work-meituan.webp","createdAt":1792978972262},{"id":"work-feishu","title":"飞书 · 开屏视觉","category":"品牌视觉","desc":"飞书品牌移动端开屏画面。","tags":["开屏","品牌传播"],"image":"media/covers/work-feishu.webp","createdAt":1792978972261},{"id":"work-water-heater","title":"热水器产品 TVC","category":"品牌影像","desc":"从产品功能与日常使用场景出发，结合空间氛围、产品细节和镜头节奏，呈现热水器的实用价值与舒适体验。","tags":["TVC","产品影像"],"image":"media/covers/work-water-heater.webp","createdAt":1792978972260,"video":"media/videos/water-heater-tvc.mp4"},{"id":"work-tangshan","title":"唐山城市宣传片","category":"品牌影像","desc":"围绕唐山城市景观与地域氛围展开的宣传片视觉内容。","tags":["城市影像","宣传片"],"image":"media/covers/work-tangshan.webp","createdAt":1792978972259,"video":"media/videos/tangshan-film.mp4"},{"id":"work-furniture","title":"家具产品 TVC","category":"品牌影像","desc":"以空间美学为线索，呈现家具造型、材质与使用场景，通过镜头调度建立产品质感，兼顾品牌表达与商业展示。","tags":["TVC","产品影像"],"image":"media/covers/work-furniture.webp","createdAt":1792978972258,"video":"media/videos/furniture-tvc.mp4"},{"id":"work-ecommerce-film-1","title":"电商短片 · 01","category":"品牌影像","desc":"围绕产品卖点构建清晰的视觉叙事，通过场景呈现与细节镜头强化产品特征，兼顾画面吸引力与信息传达效率。","tags":["电商视频","产品影像"],"image":"media/covers/work-ecommerce-film-1.webp","createdAt":1792978972257,"video":"media/videos/ecommerce-film-1.mp4"},{"id":"work-ecommerce-film-2","title":"电商短片 · 02","category":"品牌影像","desc":"以人物与生活情境串联产品展示，利用镜头节奏和画面氛围塑造记忆点，让商品信息自然融入日常场景。","tags":["电商视频","场景影像"],"image":"media/covers/work-ecommerce-film-2.webp","createdAt":1792978972256,"video":"media/videos/ecommerce-film-2.mp4"},{"id":"work-charity","title":"留守儿童公益短片","category":"品牌影像","desc":"以留守儿童的成长与生活为主题，采用克制的镜头语言铺陈情绪与关怀，传递公益议题的温度与传播价值。","tags":["公益影像","短片"],"image":"media/covers/work-charity.webp","createdAt":1792978972255,"video":"media/videos/children-charity-film.mp4"},{"id":"work-headphones","title":"耳机产品 TVC","category":"品牌影像","desc":"以城市生活场景呈现耳机产品影像内容。","tags":["TVC","产品影像"],"image":"media/covers/work-headphones.webp","createdAt":1792978972254,"video":"media/videos/headphones-tvc.mp4"},{"id":"work-mirror-world","title":"AIGC实验短片","category":"实验影像","year":"2026","desc":"以生成式影像探索镜头节奏、视觉氛围与叙事表达。","tags":["AIGC","实验短片","AI影像"],"image":"media/covers/work-mirror-world.webp","video":"media/videos/mirror-world.mp4","createdAt":1793321640096},{"id":"zero-era-mv","title":"《归零纪元》主题曲 · 风撞脉搏","category":"AI 漫剧 · MV","desc":"以音乐与末世科幻画面展开《归零纪元》的世界观序章。","tags":["AI影像","主题曲","科幻叙事"],"image":"media/covers/zero-era-mv.webp","externalUrl":"https://v.douyin.com/-vd9lTOi4X8/","createdAt":1792981390866},{"id":"zero-era-ep1","title":"《归零纪元》第一集 · 穹顶之下","category":"AI 漫剧 · 第 1 集","desc":"穹顶之下，人类在废土边缘寻找继续生存的答案。","tags":["AI漫剧","世界观构建","机甲"],"image":"media/covers/zero-era-ep1.webp","externalUrl":"https://v.douyin.com/Mq_bNpczmik/","createdAt":1792981390865},{"id":"zero-era-ep2","title":"《归零纪元》第二集 · 方舟","category":"AI 漫剧 · 第 2 集","desc":"向未知启程，方舟承载着幸存者的希望与选择。","tags":["AI漫剧","视觉叙事","科幻"],"image":"media/covers/zero-era-ep2.webp","externalUrl":"https://v.douyin.com/xv6AoUM-U3s/","createdAt":1792981390864},{"id":"zero-era-ep3","title":"《归零纪元》第三集 · 出城","category":"AI 漫剧 · 第 3 集","desc":"离开庇护所，走进危机四伏的城市废墟。","tags":["AI漫剧","场景设计","末世视觉"],"image":"media/covers/zero-era-ep3.webp","externalUrl":"https://v.douyin.com/Df405ZPnXVc/","createdAt":1792981390863},{"id":"daoshi-ep1","title":"《当道士遇上丧尸》第一集","category":"AI 漫剧 · 第 1 集","desc":"玄尘在深山清修，下山入浊世，直面尸潮与人心。","tags":["AI漫剧","道士","丧尸","末日"],"image":"media/covers/daoshi-ep1.webp","externalUrl":"https://v.douyin.com/9mLvlmPuQpQ/","createdAt":1793400000001},{"id":"daoshi-ep2","title":"《当道士遇上丧尸》第二集","category":"AI 漫剧 · 第 2 集","desc":"道法与尸毒的交锋，幸存者阵营的抉择与分裂。","tags":["AI漫剧","道士","丧尸","末日"],"image":"media/covers/daoshi-ep2.webp","externalUrl":"https://v.douyin.com/FDDaThTYxPk/","createdAt":1793400000002},{"id":"daoshi-ep3","title":"《当道士遇上丧尸》第三集","category":"AI 漫剧 · 第 3 集","desc":"终局之战，玄尘以道心镇万尸，人间未死道亦不灭。","tags":["AI漫剧","道士","丧尸","末日"],"image":"media/covers/daoshi-ep3.webp","externalUrl":"https://v.douyin.com/OrSTyFtaGYE/","createdAt":1793400000003}];</script>
+<script>window.__EMBEDDED_PROJECTS = [{"id":"work-ai-data","title":"视觉数据平台 · 引导页","category":"数字产品","desc":"以数据总览、功能模块与分析能力为线索，梳理产品引导页的信息与视觉层级。","tags":["产品体验","引导视觉"],"image":"media/covers/work-ai-data.webp","createdAt":1792978972273,"imgW":1212,"imgH":796},{"id":"work-music-app","title":"音乐 App · 曲库体验","category":"数字产品","desc":"从歌曲同步、个性推荐到播放场景，呈现移动端曲库产品的使用体验。","tags":["移动界面","引导视觉"],"image":"media/covers/work-music-app.webp","createdAt":1792978972272,"imgW":1212,"imgH":796},{"id":"work-beauty-app","title":"美妆 App · 功能引导","category":"数字产品","desc":"围绕护肤品牌与产品信息，组织轻盈、柔和的移动端引导画面。","tags":["移动界面","美妆"],"image":"media/covers/work-beauty-app.webp","createdAt":1792978972271,"imgW":1212,"imgH":796},{"id":"work-notes-app","title":"记事本 App · 入门体验","category":"数字产品","desc":"以任务清单和数据反馈呈现记事与规划流程，让功能信息清晰易读。","tags":["移动界面","效率工具"],"image":"media/covers/work-notes-app.webp","createdAt":1792978972270,"imgW":1212,"imgH":796},{"id":"work-thermos","title":"保温杯 · 电商视觉","category":"产品电商","desc":"围绕保温杯产品，组合主图与横版商品展示画面。","tags":["产品视觉","电商"],"image":"media/covers/work-thermos.webp","createdAt":1792978972269,"imgW":1232,"imgH":748},{"id":"work-charger","title":"无线充电器 · 产品视觉","category":"产品电商","desc":"通过产品主图与横版画面呈现桌面无线充电设备。","tags":["产品视觉","电商"],"image":"media/covers/work-charger.webp","createdAt":1792978972268,"imgW":1232,"imgH":748},{"id":"work-posters","title":"电商海报 · 商品视觉系列","category":"电商视觉","desc":"以饮品、护肤与食品等商品画面，呈现不同的电商海报表达。","tags":["商品海报","电商"],"image":"media/covers/work-posters.webp","createdAt":1792978972267,"imgW":1094,"imgH":1574},{"id":"work-dehydrator-poster","title":"果蔬脱水机 · 电商海报","category":"电商视觉","desc":"通过清新厨房场景呈现多功能果蔬脱水机的核心卖点。","tags":["电商海报","产品推广"],"image":"media/covers/work-dehydrator-poster.webp","createdAt":1792978972263,"imgW":810,"imgH":1440},{"id":"work-earbuds-poster","title":"睡眠耳机 · 电商海报","category":"电商视觉","desc":"以柔和居家场景突出无线降噪睡眠耳机的佩戴体验。","tags":["电商海报","产品推广"],"image":"media/covers/work-earbuds-poster.webp","createdAt":1792978972262,"imgW":810,"imgH":1440},{"id":"work-tea-poster","title":"冷泡好茶 · 电商海报","category":"电商视觉","desc":"以清凉通透的画面呈现夏日冷泡茶饮的促销氛围。","tags":["电商海报","产品推广"],"image":"media/covers/work-tea-poster.webp","createdAt":1792978972261,"imgW":1440,"imgH":810},{"id":"work-film-nightecho","title":"《夜行回声》· 电影海报","category":"海报设计","desc":"以雨夜街头的横版构图探索悬疑叙事表达。","tags":["电影海报","视觉叙事"],"image":"media/covers/work-film-nightecho.webp","createdAt":1792978972263,"imgW":1440,"imgH":810},{"id":"work-film-lighthouse","title":"《雾中灯塔》· 电影海报","category":"海报设计","desc":"以迷雾海岸与光束表现神秘冒险的电影气质。","tags":["电影海报","视觉叙事"],"image":"media/covers/work-film-lighthouse.webp","createdAt":1792978972262,"imgW":810,"imgH":1440},{"id":"work-film-lateletter","title":"《晚灯信笺》· 电影海报","category":"海报设计","desc":"以灯火与信笺营造独处时刻的叙事氛围。","tags":["电影海报","视觉叙事"],"image":"media/covers/work-film-lateletter.webp","createdAt":1792978972261,"imgW":810,"imgH":1440},{"id":"work-chair-detail","title":"电竞椅 · 详情页视觉","category":"产品电商","desc":"围绕电竞椅产品展示卖点信息、材质与使用场景。","tags":["产品详情","信息设计"],"image":"media/covers/work-chair-detail.webp","createdAt":1792978972264,"imgW":1536,"imgH":13672},{"id":"work-mouse-detail","title":"鼠标 · 详情页视觉","category":"产品电商","desc":"以长页结构组织鼠标外观与产品信息，呈现完整详情页视觉。","tags":["产品详情","信息设计"],"image":"media/covers/work-mouse-detail.webp","createdAt":1792978972263,"imgW":1536,"imgH":13689},{"id":"work-meituan","title":"美团 · 开屏视觉","category":"品牌视觉","desc":"以高对比色彩和主题画面构成移动端开屏视觉。","tags":["开屏","品牌传播"],"image":"media/covers/work-meituan.webp","createdAt":1792978972262,"imgW":810,"imgH":1440},{"id":"work-feishu","title":"飞书 · 开屏视觉","category":"品牌视觉","desc":"飞书品牌移动端开屏画面。","tags":["开屏","品牌传播"],"image":"media/covers/work-feishu.webp","createdAt":1792978972261,"imgW":810,"imgH":1440},{"id":"work-water-heater","title":"热水器产品 TVC","category":"品牌影像","desc":"从产品功能与日常使用场景出发，结合空间氛围、产品细节和镜头节奏，呈现热水器的实用价值与舒适体验。","tags":["TVC","产品影像"],"image":"media/covers/work-water-heater.webp","createdAt":1792978972260,"video":"media/videos/water-heater-tvc.mp4","imgW":1920,"imgH":1080},{"id":"work-tangshan","title":"唐山城市宣传片","category":"品牌影像","desc":"围绕唐山城市景观与地域氛围展开的宣传片视觉内容。","tags":["城市影像","宣传片"],"image":"media/covers/work-tangshan.webp","createdAt":1792978972259,"video":"media/videos/tangshan-film.mp4","imgW":1280,"imgH":720},{"id":"work-furniture","title":"家具产品 TVC","category":"品牌影像","desc":"以空间美学为线索，呈现家具造型、材质与使用场景，通过镜头调度建立产品质感，兼顾品牌表达与商业展示。","tags":["TVC","产品影像"],"image":"media/covers/work-furniture.webp","createdAt":1792978972258,"video":"media/videos/furniture-tvc.mp4","imgW":1920,"imgH":1080},{"id":"work-ecommerce-film-1","title":"电商短片 · 01","category":"品牌影像","desc":"围绕产品卖点构建清晰的视觉叙事，通过场景呈现与细节镜头强化产品特征，兼顾画面吸引力与信息传达效率。","tags":["电商视频","产品影像"],"image":"media/covers/work-ecommerce-film-1.webp","createdAt":1792978972257,"video":"media/videos/ecommerce-film-1.mp4","imgW":720,"imgH":1280},{"id":"work-ecommerce-film-2","title":"电商短片 · 02","category":"品牌影像","desc":"以人物与生活情境串联产品展示，利用镜头节奏和画面氛围塑造记忆点，让商品信息自然融入日常场景。","tags":["电商视频","场景影像"],"image":"media/covers/work-ecommerce-film-2.webp","createdAt":1792978972256,"video":"media/videos/ecommerce-film-2.mp4","imgW":720,"imgH":1280},{"id":"work-charity","title":"留守儿童公益短片","category":"品牌影像","desc":"以留守儿童的成长与生活为主题，采用克制的镜头语言铺陈情绪与关怀，传递公益议题的温度与传播价值。","tags":["公益影像","短片"],"image":"media/covers/work-charity.webp","createdAt":1792978972255,"video":"media/videos/children-charity-film.mp4","imgW":1920,"imgH":1080},{"id":"work-headphones","title":"耳机产品 TVC","category":"品牌影像","desc":"以城市生活场景呈现耳机产品影像内容。","tags":["TVC","产品影像"],"image":"media/covers/work-headphones.webp","createdAt":1792978972254,"video":"media/videos/headphones-tvc.mp4","imgW":1280,"imgH":720},{"id":"work-mirror-world","title":"AIGC实验短片","category":"实验影像","year":"2026","desc":"以生成式影像探索镜头节奏、视觉氛围与叙事表达。","tags":["AIGC","实验短片","AI影像"],"image":"media/covers/work-mirror-world.webp","video":"media/videos/mirror-world.mp4","createdAt":1793321640096,"imgW":1920,"imgH":1080},{"id":"zero-era-mv","title":"《归零纪元》主题曲 · 风撞脉搏","category":"AI 漫剧 · MV","desc":"以音乐与末世科幻画面展开《归零纪元》的世界观序章。","tags":["AI影像","主题曲","科幻叙事"],"image":"media/covers/zero-era-mv.webp","externalUrl":"https://v.douyin.com/-vd9lTOi4X8/","createdAt":1792981390866,"imgW":880,"imgH":1184},{"id":"zero-era-ep1","title":"《归零纪元》第一集 · 穹顶之下","category":"AI 漫剧 · 第 1 集","desc":"穹顶之下，人类在废土边缘寻找继续生存的答案。","tags":["AI漫剧","世界观构建","机甲"],"image":"media/covers/zero-era-ep1.webp","externalUrl":"https://v.douyin.com/Mq_bNpczmik/","createdAt":1792981390865,"imgW":880,"imgH":1184},{"id":"zero-era-ep2","title":"《归零纪元》第二集 · 方舟","category":"AI 漫剧 · 第 2 集","desc":"向未知启程，方舟承载着幸存者的希望与选择。","tags":["AI漫剧","视觉叙事","科幻"],"image":"media/covers/zero-era-ep2.webp","externalUrl":"https://v.douyin.com/xv6AoUM-U3s/","createdAt":1792981390864,"imgW":880,"imgH":1184},{"id":"zero-era-ep3","title":"《归零纪元》第三集 · 出城","category":"AI 漫剧 · 第 3 集","desc":"离开庇护所，走进危机四伏的城市废墟。","tags":["AI漫剧","场景设计","末世视觉"],"image":"media/covers/zero-era-ep3.webp","externalUrl":"https://v.douyin.com/Df405ZPnXVc/","createdAt":1792981390863,"imgW":880,"imgH":1184},{"id":"daoshi-ep1","title":"《当道士遇上丧尸》第一集","category":"AI 漫剧 · 第 1 集","desc":"玄尘在深山清修，下山入浊世，直面尸潮与人心。","tags":["AI漫剧","道士","丧尸","末日"],"image":"media/covers/daoshi-ep1.webp","externalUrl":"https://v.douyin.com/9mLvlmPuQpQ/","createdAt":1793400000001,"imgW":1280,"imgH":958},{"id":"daoshi-ep2","title":"《当道士遇上丧尸》第二集","category":"AI 漫剧 · 第 2 集","desc":"道法与尸毒的交锋，幸存者阵营的抉择与分裂。","tags":["AI漫剧","道士","丧尸","末日"],"image":"media/covers/daoshi-ep2.webp","externalUrl":"https://v.douyin.com/FDDaThTYxPk/","createdAt":1793400000002,"imgW":1280,"imgH":958},{"id":"daoshi-ep3","title":"《当道士遇上丧尸》第三集","category":"AI 漫剧 · 第 3 集","desc":"终局之战，玄尘以道心镇万尸，人间未死道亦不灭。","tags":["AI漫剧","道士","丧尸","末日"],"image":"media/covers/daoshi-ep3.webp","externalUrl":"https://v.douyin.com/OrSTyFtaGYE/","createdAt":1793400000003,"imgW":1280,"imgH":958}];</script>
 </head>
 <body class="no-scroll">
   <!-- 自定义光标：圆点 + 延迟跟随圆环（仅桌面端显示） -->
@@ -1015,6 +857,12 @@ body.entered .cyl-wrap { opacity: 1; }
   /* ---------- 瀑布流布局引擎 ---------- */
   const waterfall = {
     gap: 24,
+    _raf: 0,
+    // 合并同一帧内的多次重排请求，避免逐张图片触发全量强制回流
+    schedule() {
+      if (this._raf) return;
+      this._raf = requestAnimationFrame(() => { this._raf = 0; this.layout(); });
+    },
     layout() {
       const w = container.clientWidth;
       if (!w) return;
@@ -1024,10 +872,7 @@ body.entered .cyl-wrap { opacity: 1; }
       container.querySelectorAll('.wf-card').forEach((card) => {
         const col = heights.indexOf(Math.min(...heights));
         card.style.width = cw + 'px';
-        const wx = col * (cw + this.gap), wy = heights[col];
-        card.style.setProperty('--wfx', wx + 'px');
-        card.style.setProperty('--wfy', wy + 'px');
-        if (!card.classList.contains('in')) card.style.transform = 'translate(' + wx + 'px,' + wy + 'px)';
+        card.style.transform = 'translate(' + (col * (cw + this.gap)) + 'px,' + heights[col] + 'px)';
         heights[col] += card.offsetHeight + this.gap;
       });
       container.style.height = (Math.max(...heights) - this.gap || 0) + 'px';
@@ -1040,15 +885,21 @@ body.entered .cyl-wrap { opacity: 1; }
     card.dataset.projectId = p.id || '';
     if ((p.id || '').startsWith('zero-era-')) card.classList.add('wf-card--video-cover');
     const fig = el('figure', 'wf-visual');
+    // 用真实宽高做占位，图片/视频未加载完成前也能算出正确高度，避免卡片堆叠或跳动
+    // 详情长图有固定预览高度（560px），不参与比例占位
+    if (p.imgW && p.imgH && p.id !== 'work-chair-detail' && p.id !== 'work-mouse-detail') {
+      fig.style.aspectRatio = p.imgW + ' / ' + p.imgH;
+    }
     if (p.video) {
       const video = el('video', 'wf-video');
-      video.src = p.video;
+      // 懒加载：卡片接近视口时才真正请求视频，避免移动端同时拉取多条视频造成卡顿
+      video.dataset.src = p.video;
       video.poster = p.image || '';
       video.controls = true;
-      video.preload = 'metadata';
+      video.preload = 'none';
       video.playsInline = true;
       video.setAttribute('aria-label', p.title + ' 视频播放器');
-      video.addEventListener('loadedmetadata', () => waterfall.layout());
+      video.addEventListener('loadedmetadata', () => waterfall.schedule());
       fig.appendChild(video);
     } else {
       const img = el('img');
@@ -1065,18 +916,14 @@ body.entered .cyl-wrap { opacity: 1; }
       img.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDetail(p); }
       });
+      img.loading = 'lazy';
+      img.decoding = 'async';
       img.src = p.image;
       img.alt = p.title || '项目图片';
-      img.addEventListener('load', () => waterfall.layout());
+      img.addEventListener('load', () => waterfall.schedule());
       fig.appendChild(img);
     }
     if (p.year) fig.appendChild(el('span', 'work-year', p.year));
-    if (!p.video) {
-      const arrow = el('span', 'wf-arrow');
-      arrow.setAttribute('aria-hidden', 'true');
-      arrow.textContent = '→';
-      fig.appendChild(arrow);
-    }
     card.appendChild(fig);
 
     const info = el('div', 'wf-info');
@@ -1121,27 +968,28 @@ body.entered .cyl-wrap { opacity: 1; }
     list.forEach((p) => frag.appendChild(cardEl(p)));
     container.appendChild(frag);
 
-    // 滚动进入视口时交错淡入上滑（参考 chdartmaker.com）
-    const wfCards = Array.from(container.querySelectorAll('.wf-card'));
+    // 有 aspect-ratio 占位，可立即排出稳定布局
+    waterfall.layout();
+
+    // 视频懒加载：卡片接近视口时才设置真实地址并请求元数据
     if ('IntersectionObserver' in window) {
-      const io = new IntersectionObserver((ents) => {
-        ents.forEach((en) => {
+      const lazyVideo = new IntersectionObserver((entries, obs) => {
+        entries.forEach((en) => {
           if (!en.isIntersecting) return;
-          en.target.classList.add('in');
-          en.target.style.transform = '';
-          io.unobserve(en.target);
-          setTimeout(() => { en.target.style.transitionDelay = ''; }, 750);
+          const v = en.target.querySelector('video[data-src]');
+          if (v) { v.src = v.dataset.src; delete v.dataset.src; v.preload = 'metadata'; }
+          obs.unobserve(en.target);
         });
-      }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
-      wfCards.forEach((c, i) => { c.style.transitionDelay = Math.min((i % 3) * 110, 330) + "ms"; io.observe(c); });
-    } else {
-      wfCards.forEach((c) => c.classList.add('in'));
+      }, { rootMargin: '400px 0px' });
+      container.querySelectorAll('.wf-card').forEach((c) => {
+        if (c.querySelector('video[data-src]')) lazyVideo.observe(c);
+      });
     }
 
-    // 等全部图片加载完成再排版，保证高度准确
+    // 等图片到达后再精排一次，保证高度完全准确
     const imgs = Array.from(container.querySelectorAll('.wf-card img'));
     Promise.all(imgs.map((i) => (i.complete ? Promise.resolve() : new Promise((r) => { i.onload = i.onerror = r; }))))
-      .then(() => { waterfall.layout(); waterfall.layout(); });
+      .then(() => waterfall.schedule());
   }
 
   async function load() {
@@ -1166,7 +1014,7 @@ body.entered .cyl-wrap { opacity: 1; }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => waterfall.layout());
   if ('IntersectionObserver' in window) {
     new IntersectionObserver((entries) => {
-      if (entries.some((e) => e.isIntersecting)) waterfall.layout();
+      if (entries.some((e) => e.isIntersecting)) waterfall.schedule();
     }).observe(container);
   }
 })();
@@ -1209,6 +1057,8 @@ body.entered .cyl-wrap { opacity: 1; }
       this.cv = canvas;
       this.ctx = canvas.getContext('2d');
       this.opts = { density, link, drift, alpha, accent };
+      // 移动端：减少粒子数量并跳过 O(n²) 连线计算，避免占满主线程导致掉帧
+      this.lightweight = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 860;
       this.particles = [];
       this.convergeT = null;      // 聚拢目标点（入口页点击后启用）
       this.active = true;         // 是否应处于运行状态
@@ -1229,7 +1079,7 @@ body.entered .cyl-wrap { opacity: 1; }
       this.w = w; this.h = h;
       this.cv.width = w * dpr; this.cv.height = h * dpr;
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      this.count = Math.min(Math.round((w * h) / this.opts.density), 170);
+      this.count = Math.min(Math.round((w * h) / this.opts.density), this.lightweight ? 55 : 170);
     }
 
     build() {
@@ -1295,19 +1145,21 @@ body.entered .cyl-wrap { opacity: 1; }
       const { ctx, w, h, opts } = this;
       ctx.clearRect(0, 0, w, h);
 
-      // 连线：距离越近越亮
+      // 连线：距离越近越亮（移动端跳过，这是每帧最大的 CPU 开销）
       const D = opts.link;
-      for (let i = 0; i < this.particles.length; i++) {
-        for (let j = i + 1; j < this.particles.length; j++) {
-          const a = this.particles[i], b = this.particles[j];
-          const dx = a.x - b.x, dy = a.y - b.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < D * D) {
-            const al = (1 - Math.sqrt(d2) / D) * 0.12;
-            ctx.strokeStyle = 'rgba(148,158,196,' + al.toFixed(3) + ')';
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-            ctx.stroke();
+      if (!this.lightweight) {
+        for (let i = 0; i < this.particles.length; i++) {
+          for (let j = i + 1; j < this.particles.length; j++) {
+            const a = this.particles[i], b = this.particles[j];
+            const dx = a.x - b.x, dy = a.y - b.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < D * D) {
+              const al = (1 - Math.sqrt(d2) / D) * 0.12;
+              ctx.strokeStyle = 'rgba(148,158,196,' + al.toFixed(3) + ')';
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
           }
         }
       }
@@ -1346,6 +1198,23 @@ body.entered .cyl-wrap { opacity: 1; }
   heroField.active = false;
   heroField.pause();
 
+  // 3D 唱片画廊接管后，停用粒子背景（见 hero-gallery.js）
+  window.addEventListener('hero-gallery-active', () => {
+    heroField.active = false;
+    heroField.pause();
+    heroCv.style.display = 'none';
+  });
+
+  // 首屏粒子场滚出视口后暂停，避免浏览作品区时仍在后台逐帧绘制
+  if (heroCv && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { if (heroField.active) heroField.play(); }
+        else heroField.pause();
+      });
+    }, { rootMargin: '150px' }).observe(heroCv);
+  }
+
   /* ---------- 进入主站 ---------- */
   let entered = false;
   function enter() {
@@ -1356,6 +1225,7 @@ body.entered .cyl-wrap { opacity: 1; }
     body.classList.remove('no-scroll');
     updateHeader();
     entry.classList.add('is-leaving');
+    enterBtn.disabled = true;
 
     // 粒子向入口核心文字聚拢，随后关停入口画布
     const r = entryCore.getBoundingClientRect();
@@ -1370,13 +1240,10 @@ body.entered .cyl-wrap { opacity: 1; }
     // 焦点移入主站
     siteEl.focus({ preventScroll: true });
   }
-  // Paragon 式：自动播放进入（可点击 / 按键跳过）
-  const entryAutoDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : 3600;
-  const entryTimer = setTimeout(enter, entryAutoDelay);
-  function skipEnter() { clearTimeout(entryTimer); enter(); }
-  entry.addEventListener('click', skipEnter);
+  enterBtn.addEventListener('click', enter);
+  entry.addEventListener('click', (e) => { if (e.target !== enterBtn) enter(); });
   document.addEventListener('keydown', (e) => {
-    if (!entered && (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape')) { e.preventDefault(); skipEnter(); }
+    if (!entered && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); enter(); }
   });
 
   /* ---------- 首屏鼠标视差（仅精确指针设备） ---------- */
@@ -1634,6 +1501,7 @@ body.entered .cyl-wrap { opacity: 1; }
 
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var rot = 0, speed = 0.045, targetSpeed = 0.045, running = true;
+    var inViewport = true, rafId = 0, last = null;
 
     build();
     window.addEventListener('resize', build);
@@ -1643,27 +1511,50 @@ body.entered .cyl-wrap { opacity: 1; }
         var nx = e.clientX / window.innerWidth - 0.5;
         targetSpeed = 0.045 + nx * 0.05;
       });
-      document.addEventListener('visibilitychange', function () {
-        running = !document.hidden;
-      });
-      var last = null;
-      window.__cylDebug = function () { return { rot: rot, running: running, vis: document.visibilityState }; };
+
       function step(now) {
         if (typeof now !== 'number') now = performance.now();
-        if (running) {
-          if (last !== null) {
-            var dt = Math.min((now - last) / 16.667, 10);
-            if (dt > 0) {
-              speed += (targetSpeed - speed) * 0.04 * Math.min(dt, 2);
-              rot += speed * dt;
-              cyl.style.transform = 'rotateX(' + cyl.__tilt + 'deg) rotateY(' + rot + 'deg)';
-            }
+        if (last !== null) {
+          var dt = Math.min((now - last) / 16.667, 10);
+          if (dt > 0) {
+            speed += (targetSpeed - speed) * 0.04 * Math.min(dt, 2);
+            rot += speed * dt;
+            cyl.style.transform = 'rotateX(' + cyl.__tilt + 'deg) rotateY(' + rot + 'deg)';
           }
-          last = now;
         }
+        last = now;
       }
-      (function tick(now) { step(now); requestAnimationFrame(tick); })(performance.now());
-      setInterval(function () { step(performance.now()); }, 50);   // rAF 被节流/隐藏时的兜底驱动
+
+      function loop(now) {
+        step(now);
+        rafId = requestAnimationFrame(loop);
+      }
+      function start() {
+        if (rafId) return;
+        last = null;
+        rafId = requestAnimationFrame(loop);
+      }
+      function stop() {
+        if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+        last = null;
+      }
+
+      // 只在首屏可见且页面在前台时运行：滚到作品区或切到后台立即停止，
+      // 避免移动端持续写 3D transform 导致发热、掉帧、耗电
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          inViewport = entries.some(function (e) { return e.isIntersecting; });
+          if (inViewport && !document.hidden) start(); else stop();
+        }, { rootMargin: '120px' }).observe(hero);
+      }
+
+      document.addEventListener('visibilitychange', function () {
+        running = !document.hidden;
+        if (running && inViewport) start(); else stop();
+      });
+
+      window.__cylDebug = function () { return { rot: rot, running: running, inViewport: inViewport, vis: document.visibilityState }; };
+      start();
     } else {
       cyl.style.transform = 'rotateX(' + cyl.__tilt + 'deg) rotateY(0deg)';
     }

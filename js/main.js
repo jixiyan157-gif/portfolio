@@ -34,6 +34,8 @@
       this.cv = canvas;
       this.ctx = canvas.getContext('2d');
       this.opts = { density, link, drift, alpha, accent };
+      // 移动端：减少粒子数量并跳过 O(n²) 连线计算，避免占满主线程导致掉帧
+      this.lightweight = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 860;
       this.particles = [];
       this.convergeT = null;      // 聚拢目标点（入口页点击后启用）
       this.active = true;         // 是否应处于运行状态
@@ -54,7 +56,7 @@
       this.w = w; this.h = h;
       this.cv.width = w * dpr; this.cv.height = h * dpr;
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      this.count = Math.min(Math.round((w * h) / this.opts.density), 170);
+      this.count = Math.min(Math.round((w * h) / this.opts.density), this.lightweight ? 55 : 170);
     }
 
     build() {
@@ -120,19 +122,21 @@
       const { ctx, w, h, opts } = this;
       ctx.clearRect(0, 0, w, h);
 
-      // 连线：距离越近越亮
+      // 连线：距离越近越亮（移动端跳过，这是每帧最大的 CPU 开销）
       const D = opts.link;
-      for (let i = 0; i < this.particles.length; i++) {
-        for (let j = i + 1; j < this.particles.length; j++) {
-          const a = this.particles[i], b = this.particles[j];
-          const dx = a.x - b.x, dy = a.y - b.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < D * D) {
-            const al = (1 - Math.sqrt(d2) / D) * 0.12;
-            ctx.strokeStyle = 'rgba(148,158,196,' + al.toFixed(3) + ')';
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-            ctx.stroke();
+      if (!this.lightweight) {
+        for (let i = 0; i < this.particles.length; i++) {
+          for (let j = i + 1; j < this.particles.length; j++) {
+            const a = this.particles[i], b = this.particles[j];
+            const dx = a.x - b.x, dy = a.y - b.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < D * D) {
+              const al = (1 - Math.sqrt(d2) / D) * 0.12;
+              ctx.strokeStyle = 'rgba(148,158,196,' + al.toFixed(3) + ')';
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
           }
         }
       }
@@ -177,6 +181,16 @@
     heroField.pause();
     heroCv.style.display = 'none';
   });
+
+  // 首屏粒子场滚出视口后暂停，避免浏览作品区时仍在后台逐帧绘制
+  if (heroCv && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { if (heroField.active) heroField.play(); }
+        else heroField.pause();
+      });
+    }, { rootMargin: '150px' }).observe(heroCv);
+  }
 
   /* ---------- 进入主站 ---------- */
   let entered = false;

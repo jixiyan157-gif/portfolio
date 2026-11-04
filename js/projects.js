@@ -111,6 +111,12 @@
   /* ---------- 瀑布流布局引擎 ---------- */
   const waterfall = {
     gap: 24,
+    _raf: 0,
+    // 合并同一帧内的多次重排请求，避免逐张图片触发全量强制回流
+    schedule() {
+      if (this._raf) return;
+      this._raf = requestAnimationFrame(() => { this._raf = 0; this.layout(); });
+    },
     layout() {
       const w = container.clientWidth;
       if (!w) return;
@@ -133,15 +139,21 @@
     card.dataset.projectId = p.id || '';
     if ((p.id || '').startsWith('zero-era-')) card.classList.add('wf-card--video-cover');
     const fig = el('figure', 'wf-visual');
+    // 用真实宽高做占位，图片/视频未加载完成前也能算出正确高度，避免卡片堆叠或跳动
+    // 详情长图有固定预览高度（560px），不参与比例占位
+    if (p.imgW && p.imgH && p.id !== 'work-chair-detail' && p.id !== 'work-mouse-detail') {
+      fig.style.aspectRatio = p.imgW + ' / ' + p.imgH;
+    }
     if (p.video) {
       const video = el('video', 'wf-video');
-      video.src = p.video;
+      // 懒加载：卡片接近视口时才真正请求视频，避免移动端同时拉取多条视频造成卡顿
+      video.dataset.src = p.video;
       video.poster = p.image || '';
       video.controls = true;
-      video.preload = 'metadata';
+      video.preload = 'none';
       video.playsInline = true;
       video.setAttribute('aria-label', p.title + ' 视频播放器');
-      video.addEventListener('loadedmetadata', () => waterfall.layout());
+      video.addEventListener('loadedmetadata', () => waterfall.schedule());
       fig.appendChild(video);
     } else {
       const img = el('img');
@@ -158,9 +170,11 @@
       img.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDetail(p); }
       });
+      img.loading = 'lazy';
+      img.decoding = 'async';
       img.src = p.image;
       img.alt = p.title || '项目图片';
-      img.addEventListener('load', () => waterfall.layout());
+      img.addEventListener('load', () => waterfall.schedule());
       fig.appendChild(img);
     }
     if (p.year) fig.appendChild(el('span', 'work-year', p.year));
@@ -208,10 +222,28 @@
     list.forEach((p) => frag.appendChild(cardEl(p)));
     container.appendChild(frag);
 
-    // 等全部图片加载完成再排版，保证高度准确
+    // 有 aspect-ratio 占位，可立即排出稳定布局
+    waterfall.layout();
+
+    // 视频懒加载：卡片接近视口时才设置真实地址并请求元数据
+    if ('IntersectionObserver' in window) {
+      const lazyVideo = new IntersectionObserver((entries, obs) => {
+        entries.forEach((en) => {
+          if (!en.isIntersecting) return;
+          const v = en.target.querySelector('video[data-src]');
+          if (v) { v.src = v.dataset.src; delete v.dataset.src; v.preload = 'metadata'; }
+          obs.unobserve(en.target);
+        });
+      }, { rootMargin: '400px 0px' });
+      container.querySelectorAll('.wf-card').forEach((c) => {
+        if (c.querySelector('video[data-src]')) lazyVideo.observe(c);
+      });
+    }
+
+    // 等图片到达后再精排一次，保证高度完全准确
     const imgs = Array.from(container.querySelectorAll('.wf-card img'));
     Promise.all(imgs.map((i) => (i.complete ? Promise.resolve() : new Promise((r) => { i.onload = i.onerror = r; }))))
-      .then(() => { waterfall.layout(); waterfall.layout(); });
+      .then(() => waterfall.schedule());
   }
 
   async function load() {
@@ -236,7 +268,7 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => waterfall.layout());
   if ('IntersectionObserver' in window) {
     new IntersectionObserver((entries) => {
-      if (entries.some((e) => e.isIntersecting)) waterfall.layout();
+      if (entries.some((e) => e.isIntersecting)) waterfall.schedule();
     }).observe(container);
   }
 })();
